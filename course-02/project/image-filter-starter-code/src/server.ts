@@ -1,7 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
 import { filterImageFromURL, deleteLocalFiles } from "./util/util";
-
 (async () => {
   // Init the Express application
   const app = express();
@@ -31,31 +30,34 @@ import { filterImageFromURL, deleteLocalFiles } from "./util/util";
   //! END @TODO1
 
   // Root Endpoint
-  app.get("/", async (req, res) => {
+  app.get("/", async (req: express.Request, res: express.Response) => {
     res.send("try GET /filteredimage?image_url={{}}");
   });
 
-  app.get("/filteredimage", async (req, res) => {
-    const imageUrl = req.query.image_url;
-    console.log(imageUrl);
+  app.get(
+    "/filteredimage",
+    async (req: express.Request, res: express.Response) => {
+      const imageUrl: string = req.query.image_url;
+      console.log(imageUrl);
 
-    // If there's no imageurl send an error
+      // If there's no imageurl send an error
 
-    if (!imageUrl) {
-      return res.status(400).send({
-        message: "No image url was sent",
-      });
+      if (!imageUrl) {
+        return res.status(400).send({
+          message: "No image url was sent",
+        });
+      }
+
+      try {
+        const filteredImageFromURL = await filterImageFromURL(imageUrl);
+        res.sendFile(filteredImageFromURL, () =>
+          deleteLocalFiles([filteredImageFromURL])
+        );
+      } catch (error) {
+        res.sendStatus(422).send("Can't use the image");
+      }
     }
-
-    try {
-      const filteredImageFromURL = await filterImageFromURL(imageUrl);
-      res.sendFile(filteredImageFromURL, () =>
-        deleteLocalFiles([filteredImageFromURL])
-      );
-    } catch (error) {
-      res.sendStatus(422).send("Can't use the image");
-    }
-  });
+  );
 
   // Start the Server
   app.listen(port, () => {
